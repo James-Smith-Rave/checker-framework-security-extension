@@ -1,10 +1,14 @@
 package org.checkerframework.checker.sqli.util;
 
+import org.checkerframework.checker.sqli.qual.Tainted;
+import org.checkerframework.checker.sqli.qual.Untainted;
+
 public class SqlSanitizer {
-public static String sanitize(String input) {
-    if (input == null) {
-        return null;
+    @SuppressWarnings("sqli")
+    public static @Untainted String sanitize(@Tainted String input) {
+        if (input == null) {
+            return null;
+        }
+        return input.replace("'", "''");
     }
-    return input.replace("'", "''");
-}
 }
