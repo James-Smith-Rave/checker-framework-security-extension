@@ -1,66 +1,73 @@
 name: DevSecOps Build & Security Assurance Pipeline
 
 on:
-push:
-branches: [ "main", "master", "develop" ]
-pull_request:
-branches: [ "main", "master", "develop" ]
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 permissions:
-contents: read
-security-events: write
+  contents: read
+  security-events: write
 
 jobs:
-build-and-test:
-name: Build & Test (${{ matrix.os }})
-runs-on: ${{ matrix.os }}
-strategy:
-  fail-fast: false
-  matrix:
-    os: [ubuntu-latest, windows-latest]
+  build-and-test:
+    name: Build & Security Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-steps:
-  - name: Checkout Repository
-    uses: actions/checkout@v4
+      - name: Set up JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
 
-  - name: Set up JDK 17
-    uses: actions/setup-java@v4
-    with:
-      java-version: '17'
-      distribution: 'temurin'
-      cache: 'maven'
+      - name: Compile & Run Security Taint Tests
+        run: mvn clean test --batch-mode
 
-  - name: Compile and Run Security Checker Tests
-    run: mvn clean test --batch-mode
+  dependency-analysis:
+    name: Supply Chain Vulnerability Audit (SCA)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  - name: Upload Surefire Test Reports
-    if: always()
-    uses: actions/upload-artifact@v4
-    with:
-      name: surefire-reports-${{ matrix.os }}
-      path: target/surefire-reports/
+      - name: Set up JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
 
-dependency-analysis:
-name: Supply Chain Vulnerability Audit
-runs-on: ubuntu-latest
+      - name: OWASP Dependency Check (NVD Synced)
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: mvn org.owasp:dependency-check-maven:check -DfailOnError=false --batch-mode
 
-steps:
-  - name: Checkout Repository
-    uses: actions/checkout@v4
+      - name: Upload SCA Audit Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-check-report
+          path: target/dependency-check-report.html
 
-  - name: Set up JDK 17
-    uses: actions/setup-java@v4
-    with:
-      java-version: '17'
-      distribution: 'temurin'
-      cache: 'maven'
+  secrets-scan:
+    name: Secrets & Credential Audit (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Full Git History
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  - name: OWASP Dependency Check
-    run: mvn org.owasp:dependency-check-maven:check -DfailOnError=false --batch-mode
-
-  - name: Upload Dependency Check Report
-    if: always()
-    uses: actions/upload-artifact@v4
-    with:
-      name: dependency-check-report
-      path: target/dependency-check-report.html
+      - name: Scan Repository for Exposed Secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
