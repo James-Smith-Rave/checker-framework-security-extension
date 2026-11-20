@@ -1,0 +1,19 @@
+import org.checkerframework.checker.sqli.qual.Untainted;
+import org.checkerframework.checker.sqli.qual.Tainted;
+
+package java.sql;
+
+public interface Statement {
+public ResultSet executeQuery(@Untainted String sql);
+public int executeUpdate(@Untainted String sql);
+}
+
+public interface Connection {
+public PreparedStatement prepareStatement(@Untainted String sql);
+}
+
+package org.checkerframework.checker.sqli.util;
+
+public class SqlSanitizer {
+public static @Untainted String sanitize(@Tainted String input);
+}

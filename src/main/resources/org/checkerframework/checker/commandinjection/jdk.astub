@@ -1,0 +1,17 @@
+import org.checkerframework.checker.commandinjection.qual.UntaintedCommand;
+
+package java.lang;
+
+public class Runtime {
+public Process exec(@UntaintedCommand String command);
+public Process exec(@UntaintedCommand String[] cmdarray);
+public Process exec(@UntaintedCommand String command, String[] envp);
+public Process exec(@UntaintedCommand String command, String[] envp, java.io.File dir);
+}
+
+public class ProcessBuilder {
+public ProcessBuilder(@UntaintedCommand String... command);
+public ProcessBuilder(java.util.List<@UntaintedCommand String> command);
+public ProcessBuilder command(@UntaintedCommand String... command);
+public ProcessBuilder command(java.util.List<@UntaintedCommand String> command);
+}

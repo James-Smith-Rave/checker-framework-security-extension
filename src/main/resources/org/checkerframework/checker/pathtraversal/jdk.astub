@@ -1,0 +1,19 @@
+import org.checkerframework.checker.pathtraversal.qual.UntaintedPath;
+
+package java.io;
+
+public class File {
+public File(@UntaintedPath String pathname);
+public File(@UntaintedPath String parent, String child);
+}
+
+public class FileOutputStream {
+public FileOutputStream(@UntaintedPath String name);
+public FileOutputStream(@UntaintedPath File file);
+}
+
+package java.nio.file;
+
+public class Paths {
+public static Path get(@UntaintedPath String first, String... more);
+}
